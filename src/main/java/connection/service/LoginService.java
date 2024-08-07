@@ -4,8 +4,11 @@ import connection.dto.LoginDTO;
 import connection.dto.LoginResponse;
 import connection.model.Usuario;
 import connection.repository.UsuarioRepository;
+import connection.security.TokenService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -16,34 +19,24 @@ import java.time.Instant;
 public class LoginService {
 
     private final UsuarioRepository usuarioRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtEncoder jwtEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
 
-    public LoginService(UsuarioRepository usuarioRepository, BCryptPasswordEncoder passwordEncoder, JwtEncoder jwtEncoder) {
+
+    public LoginService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, TokenService tokenService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtEncoder = jwtEncoder;
+        this.tokenService = tokenService;
     }
 
     public LoginResponse login(LoginDTO loginDTO) {
         Usuario usuario = usuarioRepository.findByEmail(loginDTO.email())
-                .filter(u -> passwordEncoder.matches(loginDTO.senha(), u.getSenha()))
                 .orElseThrow(() -> new BadCredentialsException("E-mail ou senha inválidos"));
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("connection")
-                .subject(usuario.getEmail())
-                .claim("id", usuario.getId())
-                .claim("uuid", usuario.getUuid())
-                .claim("nome", usuario.getNome())
-                .claim("email", usuario.getEmail())
-                .claim("ativo", usuario.getAtivo())
-                .claim("permissao", usuario.getPermissao().getNome())
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(600))
-                .build();
-
-        String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        if(!passwordEncoder.matches(loginDTO.senha(), usuario.getSenha())) {
+            return null;
+        }
+        String token = this.tokenService.generateToken(usuario);
 
         return new LoginResponse(token, 600L);
     }
