@@ -6,10 +6,12 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import connection.model.Usuario;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -17,13 +19,15 @@ import java.time.ZoneOffset;
 
 @Service
 public class TokenService {
+
     @Value("${api.security.token.secret}")
     private String secret;
-    public String generateToken(Usuario usuario){
+
+    public String generateToken(Usuario usuario) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
 
-            String token = JWT.create()
+            return JWT.create()
                     .withIssuer("connection")
                     .withSubject(usuario.getEmail())
                     .withExpiresAt(this.generateExpirationDate())
@@ -32,13 +36,12 @@ public class TokenService {
                     .withClaim("email", usuario.getEmail())
                     .withClaim("permissao", usuario.getPermissao().getNome())
                     .sign(algorithm);
-            return token;
-        } catch (JWTCreationException exception){
+        } catch (JWTCreationException exception) {
             throw new RuntimeException("Error while authenticating");
         }
     }
 
-    public String validateToken(String token){
+    public String validateToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
@@ -59,10 +62,11 @@ public class TokenService {
                 .verify(token);
     }
 
-    public String getToken(){
-        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
-            String authHeader = (String) attributes.getAttribute("Authorization", RequestAttributes.SCOPE_REQUEST);
+    public String getToken() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes instanceof ServletRequestAttributes) {
+            HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
+            String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 return authHeader.substring(7);
             }
@@ -70,8 +74,7 @@ public class TokenService {
         return null;
     }
 
-
-    private Instant generateExpirationDate(){
+    private Instant generateExpirationDate() {
         return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
     }
 }

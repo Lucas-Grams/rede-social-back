@@ -1,5 +1,6 @@
 package connection.model;
 
+import connection.dto.UsuarioDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,4 +51,18 @@ public class Usuario {
             joinColumns = @JoinColumn(name = "usuario_id"),
             inverseJoinColumns = @JoinColumn(name = "assunto_id"))
     private List<Assunto> assuntos;
+
+    public Usuario(UsuarioDTO usuarioDTO) {
+        this.id = usuarioDTO.getId();
+        this.nome = usuarioDTO.getNome();
+        this.email = usuarioDTO.getEmail();
+        this.senha = usuarioDTO.getSenha();
+        this.uuid = usuarioDTO.getUuid();
+        this.foto = usuarioDTO.getFoto();
+        this.descricao = usuarioDTO.getDescricao();
+        this.permissao = usuarioDTO.getPermissao();
+        this.dataCadastro = usuarioDTO.getDataCadastro();
+        this.ativo = usuarioDTO.getAtivo();
+
+    }
 }

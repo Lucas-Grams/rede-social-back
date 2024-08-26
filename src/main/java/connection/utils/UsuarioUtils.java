@@ -21,7 +21,6 @@ public class UsuarioUtils {
             String nome = decodedJWT.getClaim("nome").asString();
             String uuid = decodedJWT.getClaim("uuid").asString();
 
-            // Crie um objeto Usuario com as informações obtidas
             Usuario usuario = new Usuario();
             usuario.setEmail(email);
             usuario.setNome(nome);

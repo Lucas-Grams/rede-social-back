@@ -48,10 +48,16 @@ public class SecurityFilter extends OncePerRequestFilter {
                 );
                 Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("User authenticated with roles: " + authorities); // Log para debugging
+            } else {
+                System.out.println("Token validation failed or login is null");
             }
+        } else {
+            System.out.println("Token is null or invalid");
         }
         filterChain.doFilter(request, response); // Continua a cadeia de filtros
     }
+
 
     private String recoverToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
